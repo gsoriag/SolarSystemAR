@@ -1,0 +1,27 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    background-color: #101020;
+}
+
+#info {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    color: white;
+    z-index: 10;
+    pointer-events: none;
+}
+
+#info h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+#info p {
+    margin-top: 8px;
+    font-size: 14px;
+}
