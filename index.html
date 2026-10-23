@@ -4,10 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Cubo AR con marcador</title>
-    <link rel="stylesheet" href="./css/style.css">
-    <script src="./js/app.js?v=camera-permission-2" defer></script>
+    <link rel="stylesheet" href="./css/style.css?v=direct-camera-3">
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+            "threex": "https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.7/three.js/build/ar-threex.mjs"
+        }
+    }
+    </script>
+    <script src="./js/app.js?v=direct-camera-3" defer></script>
 </head>
 <body>
+    <video id="camera-video" autoplay muted playsinline hidden aria-label="Vista de la cámara"></video>
     <header id="info">
         <h1>Cubo AR con marcador</h1>
         <p>Imprime el marcador Hiro o ábrelo en otra pantalla. Después, apunta la cámara hacia él.</p>

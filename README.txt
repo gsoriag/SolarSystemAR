@@ -1,6 +1,8 @@
 ﻿CUBO AR CON MARCADOR HIRO
 
-Utiliza A-Frame 1.6.0 y AR.js 3.4.7 para detectar el marcador con la cámara.
+Utiliza Three.js 0.164.1 y AR.js 3.4.7 para detectar el marcador con la cámara.
+La cámara se abre una sola vez y ese mismo vídeo alimenta el detector.
+No depende del inicio automático de una escena A-Frame.
 No utiliza WebXR ni requiere ARCore.
 
 CÓMO PROBAR

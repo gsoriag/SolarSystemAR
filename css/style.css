@@ -51,6 +51,7 @@ body.ar-active #info h1 { font-size: 16px; margin-bottom: 6px; }
     cursor: pointer;
 }
 #ar-button:disabled { background: #444; cursor: not-allowed; }
-a-scene { position: fixed !important; inset: 0; width: 100%; height: 100%; z-index: 1; }
-#arjs-video { z-index: 0 !important; }
+#camera-video, #ar-canvas { position: fixed; }
+#camera-video { z-index: 0; }
+#ar-canvas { z-index: 1; pointer-events: none; }
 noscript { position: fixed; top: 50%; padding: 20px; }
