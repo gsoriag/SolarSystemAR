@@ -6,8 +6,20 @@ let scene = null;
 let stream = null;
 let started = false;
 let watchdog = null;
+let stopped = false;
+
+function withTimeout(promise, message, milliseconds = 20000) {
+    let timer;
+    return Promise.race([
+        promise,
+        new Promise((_, reject) => {
+            timer = setTimeout(() => reject(new Error(message)), milliseconds);
+        })
+    ]).finally(() => clearTimeout(timer));
+}
 
 function stopCamera() {
+    stopped = true;
     clearTimeout(watchdog);
     stream?.getTracks().forEach((track) => track.stop());
     document.querySelectorAll('video').forEach((video) => {
@@ -46,6 +58,11 @@ function loadScript(url) {
 window.addEventListener('arjs-video-loaded', (event) => {
     const video = event.detail.component;
     stream = video.srcObject;
+    if (stopped) {
+        stream?.getTracks().forEach((track) => track.stop());
+        return;
+    }
+    clearTimeout(watchdog);
     video.muted = true;
     video.play().catch(() => {
         arStatus.textContent = 'Toca la imagen de la cámara para activar el vídeo.';
@@ -72,6 +89,11 @@ function createScene() {
     scene.setAttribute('renderer', 'antialias: true; alpha: true');
     scene.setAttribute('loading-screen', 'enabled: false');
     scene.setAttribute('arjs', 'sourceType: webcam; debugUIEnabled: false; detectionMode: mono; cameraParametersUrl: ' + assetBase + 'data/data/camera_para.dat;');
+    scene.addEventListener('renderstart', () => {
+        if (!stopped && !stream) {
+            arStatus.textContent = 'Escena lista. Abriendo la cámara para detectar el marcador…';
+        }
+    }, { once: true });
     const marker = document.createElement('a-marker');
     marker.setAttribute('type', 'pattern');
     marker.setAttribute('url', assetBase + 'data/data/patt.hiro');
@@ -97,11 +119,7 @@ function createScene() {
     scene.appendChild(camera);
     document.body.appendChild(scene);
     watchdog = setTimeout(() => {
-        arStatus.textContent = stream
-            ? 'Aún no se detecta el Hiro. Revisa luz, enfoque y borde completo. Si persiste, recarga y comprueba tu conexión.'
-            : 'Esperando la cámara. Revisa la solicitud de permiso del navegador; si no aparece, recarga.';
-        arButton.textContent = stream ? 'Detener cámara' : 'Recargar y reintentar';
-        arButton.disabled = false;
+        showError(new Error('El acceso a la cámara está autorizado, pero la escena AR no terminó de iniciarse. Recarga la página y comprueba tu conexión.'));
     }, 30000);
 }
 
@@ -114,14 +132,30 @@ arButton.addEventListener('click', async () => {
     }
     started = true;
     arButton.disabled = true;
-    arStatus.textContent = 'Cargando el detector de marcadores…';
+    arStatus.textContent = 'Solicitando acceso a la cámara… Si ya lo permitiste, no aparecerá otra solicitud.';
     try {
-        await loadScript('https://aframe.io/releases/1.6.0/aframe.min.js');
-        await loadScript(assetBase + 'aframe/build/aframe-ar.js');
+        // Pedir permiso desde el clic, antes de cargar librerías o crear la escena.
+        // AR.js abrirá después su propio vídeo; liberar esta prueba evita ocupar la cámara.
+        const permissionRequest = navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: { facingMode: { ideal: 'environment' } }
+        }).then((permissionStream) => {
+            permissionStream.getTracks().forEach((track) => track.stop());
+        });
+        await withTimeout(permissionRequest,
+            'La solicitud de cámara sigue pendiente. Revisa los permisos de cámara de Chrome y de este sitio, y vuelve a intentarlo.', 30000);
+        if (stopped) return;
+        arStatus.textContent = 'Cámara autorizada. Cargando el detector de marcadores…';
+        await withTimeout(loadScript('https://aframe.io/releases/1.6.0/aframe.min.js'),
+            'La descarga de A-Frame tardó demasiado. Comprueba tu conexión y recarga.');
+        if (stopped) return;
+        await withTimeout(loadScript(assetBase + 'aframe/build/aframe-ar.js'),
+            'La descarga del detector AR tardó demasiado. Comprueba tu conexión y recarga.');
+        if (stopped) return;
         if (!window.AFRAME?.systems.arjs) {
             throw new Error('El detector AR no se cargó correctamente. Recarga la página.');
         }
-        arStatus.textContent = 'Permite el acceso a la cámara cuando el navegador lo solicite.';
+        arStatus.textContent = 'Cámara autorizada. Iniciando la escena AR…';
         createScene();
     } catch (error) {
         showError(error);

@@ -8,6 +8,8 @@ CÓMO PROBAR
 2. Abrir marcador.html en otro dispositivo o imprimirlo.
 3. Abrir index.html en el teléfono y pulsar Iniciar cámara.
 4. Aceptar el permiso de cámara.
+   El permiso se solicita directamente al pulsar el botón, antes de cargar AR.
+   Si ya está concedido, el navegador puede continuar sin mostrar otro aviso.
 5. Apuntar al Hiro con buena luz y el borde negro completo visible.
 6. El cubo aparece sobre el marcador y se oculta al perderlo de vista.
 7. Detener cámara libera la cámara y recarga la página inicial.
