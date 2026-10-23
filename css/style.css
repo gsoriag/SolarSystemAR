@@ -25,3 +25,46 @@ body {
     margin-top: 8px;
     font-size: 14px;
 }
+
+#ar-controls {
+    position: fixed;
+    bottom: max(20px, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(90%, 480px);
+    color: white;
+    text-align: center;
+    z-index: 20;
+}
+
+#ar-status {
+    padding: 12px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.75);
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+#ar-button {
+    padding: 14px 24px;
+    border: 1px solid white;
+    border-radius: 8px;
+    background: #2455cc;
+    color: white;
+    font: inherit;
+    cursor: pointer;
+}
+
+#ar-button:disabled {
+    background: #444;
+    cursor: not-allowed;
+}
+
+body.ar-active {
+    background: transparent;
+}
+
+body.ar-active #info {
+    display: none;
+}

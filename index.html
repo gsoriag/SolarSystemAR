@@ -23,6 +23,18 @@
         <p>Presiona el botón para iniciar Realidad Aumentada.</p>
     </div>
 
-    <script type="module" src="./js/app.js"></script>
+    <div id="ar-controls">
+        <p id="ar-status" role="status" aria-live="polite">Cargando experiencia AR…</p>
+        <button id="ar-button" type="button" disabled>Preparando AR…</button>
+    </div>
+
+    <script type="module">
+        import('./js/app.js').catch((error) => {
+            console.error('No se pudo cargar la experiencia AR:', error);
+            document.getElementById('ar-status').textContent =
+                'No se pudo cargar la experiencia 3D. Revisa tu conexión y recarga la página. Detalle: ' + error.message;
+            document.getElementById('ar-button').textContent = 'Error de carga';
+        });
+    </script>
 </body>
 </html>
