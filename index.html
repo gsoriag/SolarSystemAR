@@ -1,40 +1,22 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebXR - Cubo AR</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Cubo AR con marcador</title>
     <link rel="stylesheet" href="./css/style.css">
-
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
-        }
-    }
-    </script>
+    <script src="./js/app.js" defer></script>
 </head>
 <body>
-
-    <div id="info">
-        <h1>Mi primera experiencia AR</h1>
-        <p>Presiona el botón para iniciar Realidad Aumentada.</p>
-    </div>
-
+    <header id="info">
+        <h1>Cubo AR con marcador</h1>
+        <p>Imprime el marcador Hiro o ábrelo en otra pantalla. Después, apunta la cámara hacia él.</p>
+        <a href="./marcador.html" target="_blank" rel="noopener">Ver / imprimir marcador Hiro</a>
+    </header>
     <div id="ar-controls">
-        <p id="ar-status" role="status" aria-live="polite">Cargando experiencia AR…</p>
-        <button id="ar-button" type="button" disabled>Preparando AR…</button>
+        <p id="ar-status" role="status" aria-live="polite">Listo. Necesitas buena luz y ver el borde completo del marcador.</p>
+        <button id="ar-button" type="button">Iniciar cámara</button>
     </div>
-
-    <script type="module">
-        import('./js/app.js').catch((error) => {
-            console.error('No se pudo cargar la experiencia AR:', error);
-            document.getElementById('ar-status').textContent =
-                'No se pudo cargar la experiencia 3D. Revisa tu conexión y recarga la página. Detalle: ' + error.message;
-            document.getElementById('ar-button').textContent = 'Error de carga';
-        });
-    </script>
+    <noscript>Activa JavaScript para utilizar esta experiencia.</noscript>
 </body>
 </html>

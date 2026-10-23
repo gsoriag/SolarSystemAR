@@ -1,0 +1,31 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marcador Hiro para imprimir</title>
+    <style>
+        body { margin: 24px; font-family: Arial, sans-serif; text-align: center; color: #111; background: white; }
+        p { max-width: 600px; margin: 16px auto; line-height: 1.5; }
+        img { display: block; width: min(80vw, 480px); height: auto; margin: 32px auto; }
+        button, a { display: inline-block; margin: 8px; padding: 12px; }
+        @media print {
+            .controls { display: none; }
+            img { width: 120mm; margin: 20mm auto; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Marcador Hiro</h1>
+    <p>Imprime esta página en papel blanco o muéstrala en otra pantalla.
+       Conserva el cuadrado negro completo y el margen blanco. Evita reflejos y dobleces.</p>
+    <img src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.7/data/images/hiro.png"
+         alt="Marcador Hiro: cuadrado negro con la palabra Hiro en el centro">
+    <p>Desde el teléfono, inicia la cámara y apunta a este marcador para ver el cubo.</p>
+    <div class="controls">
+        <button type="button" onclick="window.print()">Imprimir marcador</button>
+        <a href="./index.html">Volver a la experiencia</a>
+        <p>Si no aparece la imagen, comprueba tu conexión antes de imprimir.</p>
+    </div>
+</body>
+</html>

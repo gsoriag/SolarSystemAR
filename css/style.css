@@ -1,51 +1,46 @@
-body {
+﻿html, body {
     margin: 0;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
     font-family: Arial, sans-serif;
-    background-color: #101020;
-}
-
-#info {
-    position: absolute;
-    top: 20px;
-    left: 0;
-    width: 100%;
-    text-align: center;
+    background: #101020;
     color: white;
+}
+body.ar-active, html:has(body.ar-active) { background: transparent; }
+#info {
+    position: fixed;
+    top: max(12px, env(safe-area-inset-top));
+    left: 5%;
+    width: 90%;
+    box-sizing: border-box;
+    padding: 14px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.72);
+    text-align: center;
     z-index: 10;
-    pointer-events: none;
 }
-
-#info h1 {
-    margin: 0;
-    font-size: 24px;
-}
-
-#info p {
-    margin-top: 8px;
-    font-size: 14px;
-}
-
+#info h1 { margin: 0; font-size: 22px; }
+#info p { margin: 10px 0; font-size: 14px; line-height: 1.4; }
+a { color: #a9d8ff; }
+body.ar-active #info p { display: none; }
+body.ar-active #info h1 { font-size: 16px; margin-bottom: 6px; }
 #ar-controls {
     position: fixed;
-    bottom: max(20px, env(safe-area-inset-bottom));
+    bottom: max(16px, env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%);
     width: min(90%, 480px);
-    color: white;
     text-align: center;
     z-index: 20;
 }
-
 #ar-status {
     padding: 12px;
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.75);
     font-size: 14px;
     line-height: 1.5;
-    overflow-wrap: anywhere;
 }
-
 #ar-button {
     padding: 14px 24px;
     border: 1px solid white;
@@ -55,16 +50,7 @@ body {
     font: inherit;
     cursor: pointer;
 }
-
-#ar-button:disabled {
-    background: #444;
-    cursor: not-allowed;
-}
-
-body.ar-active {
-    background: transparent;
-}
-
-body.ar-active #info {
-    display: none;
-}
+#ar-button:disabled { background: #444; cursor: not-allowed; }
+a-scene { position: fixed !important; inset: 0; width: 100%; height: 100%; z-index: 1; }
+#arjs-video { z-index: 0 !important; }
+noscript { position: fixed; top: 50%; padding: 20px; }

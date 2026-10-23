@@ -1,169 +1,141 @@
-import * as THREE from 'three';
-
-// ==============================
-// ESCENA
-// ==============================
-const scene = new THREE.Scene();
-
-// ==============================
-// CÁMARA
-// ==============================
-const camera = new THREE.PerspectiveCamera(
-    70,
-    window.innerWidth / window.innerHeight,
-    0.01,
-    20
-);
-
-// ==============================
-// RENDERER
-// ==============================
-const renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    alpha: true
-});
-
-renderer.setPixelRatio(window.devicePixelRatio);
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.xr.enabled = true;
-
-document.body.appendChild(renderer.domElement);
-
-// ==============================
-// BOTÓN AR
-// ==============================
+﻿// AR con marcador: cámara sin WebXR ni ARCore.
 const arButton = document.getElementById('ar-button');
 const arStatus = document.getElementById('ar-status');
-let currentSession = null;
-renderer.xr.setReferenceSpaceType('local');
+const assetBase = 'https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.7/';
+let scene = null;
+let stream = null;
+let started = false;
+let watchdog = null;
 
-function showARError(error) {
-    console.error('Error de WebXR:', error);
-    const messages = {
-        NotAllowedError: 'El navegador no autorizó AR. Revisa los permisos del sitio y vuelve a intentarlo.',
-        SecurityError: 'El navegador bloqueó AR por seguridad o permisos. Abre la página directamente mediante HTTPS.',
-        NotSupportedError: 'Este dispositivo no puede iniciar WebXR AR. Comprueba su compatibilidad y los servicios de realidad aumentada.',
-        InvalidStateError: 'Hay otra sesión XR activa o la página no está activa. Cierra la otra sesión y vuelve a intentarlo.'
-    };
-    arStatus.textContent = messages[error.name] || `No se pudo iniciar AR: ${error.message || error.name}`;
+function stopCamera() {
+    clearTimeout(watchdog);
+    stream?.getTracks().forEach((track) => track.stop());
+    document.querySelectorAll('video').forEach((video) => {
+        video.srcObject?.getTracks().forEach((track) => track.stop());
+    });
+    scene?.pause();
 }
 
-function onSessionEnded() {
-    currentSession = null;
+function showError(error) {
+    console.error('Error AR:', error);
+    stopCamera();
     document.body.classList.remove('ar-active');
-    arButton.textContent = 'Iniciar AR';
+    const messages = {
+        NotAllowedError: 'No se autorizó la cámara. Permite su acceso en la configuración del sitio y vuelve a intentarlo.',
+        SecurityError: 'El navegador bloqueó la cámara. Abre la página directamente con HTTPS.',
+        NotFoundError: 'No se encontró una cámara disponible.',
+        NotReadableError: 'No se pudo abrir la cámara. Cierra otras aplicaciones que puedan estar usándola.',
+        OverconstrainedError: 'La cámara no admite la configuración solicitada.'
+    };
+    arStatus.textContent = messages[error.name] || error.message || 'No se pudo iniciar la experiencia.';
+    arButton.textContent = 'Recargar y reintentar';
     arButton.disabled = false;
-    arStatus.textContent = 'Sesión AR finalizada. Puedes volver a iniciarla.';
+}
+
+function loadScript(url) {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = url;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('No se pudieron descargar las librerías AR. Revisa tu conexión y recarga.'));
+        document.head.appendChild(script);
+    });
+}
+
+// En AR.js 3.4.7 camera-init no incluye detail; el vídeo sí expone el stream.
+window.addEventListener('arjs-video-loaded', (event) => {
+    const video = event.detail.component;
+    stream = video.srcObject;
+    video.muted = true;
+    video.play().catch(() => {
+        arStatus.textContent = 'Toca la imagen de la cámara para activar el vídeo.';
+    });
+    arStatus.textContent = 'Cámara activa. Apunta al marcador Hiro con todo su borde visible.';
+    document.body.classList.add('ar-active');
+    arButton.textContent = 'Detener cámara';
+    arButton.disabled = false;
+    stream.getVideoTracks().forEach((track) => {
+        track.addEventListener('ended', () => {
+            showError(new Error('La cámara se desconectó. Recarga para volver a iniciarla.'));
+        }, { once: true });
+    });
+});
+window.addEventListener('camera-error', (event) => {
+    showError(event.detail?.error || new Error('No se pudo abrir la cámara. Permite su acceso en la configuración del sitio y cierra otras aplicaciones que puedan estar usándola.'));
+});
+
+function createScene() {
+    scene = document.createElement('a-scene');
+    scene.setAttribute('embedded', '');
+    scene.setAttribute('vr-mode-ui', 'enabled: false');
+    scene.setAttribute('device-orientation-permission-ui', 'enabled: false');
+    scene.setAttribute('renderer', 'antialias: true; alpha: true');
+    scene.setAttribute('loading-screen', 'enabled: false');
+    scene.setAttribute('arjs', 'sourceType: webcam; debugUIEnabled: false; detectionMode: mono; cameraParametersUrl: ' + assetBase + 'data/data/camera_para.dat;');
+    const marker = document.createElement('a-marker');
+    marker.setAttribute('type', 'pattern');
+    marker.setAttribute('url', assetBase + 'data/data/patt.hiro');
+    marker.setAttribute('emitevents', 'true');
+    const cube = document.createElement('a-box');
+    cube.setAttribute('position', '0 0.5 0');
+    cube.setAttribute('width', '0.8');
+    cube.setAttribute('height', '0.8');
+    cube.setAttribute('depth', '0.8');
+    cube.setAttribute('material', 'shader: normal');
+    cube.setAttribute('animation', 'property: rotation; to: 0 360 0; loop: true; dur: 6000; easing: linear');
+    marker.appendChild(cube);
+    marker.addEventListener('markerFound', () => {
+        clearTimeout(watchdog);
+        arStatus.textContent = 'Marcador detectado. Mueve la cámara alrededor del cubo.';
+    });
+    marker.addEventListener('markerLost', () => {
+        arStatus.textContent = 'Marcador fuera de vista. Apunta de nuevo al Hiro con todo el borde visible.';
+    });
+    scene.appendChild(marker);
+    const camera = document.createElement('a-entity');
+    camera.setAttribute('camera', '');
+    scene.appendChild(camera);
+    document.body.appendChild(scene);
+    watchdog = setTimeout(() => {
+        arStatus.textContent = stream
+            ? 'Aún no se detecta el Hiro. Revisa luz, enfoque y borde completo. Si persiste, recarga y comprueba tu conexión.'
+            : 'Esperando la cámara. Revisa la solicitud de permiso del navegador; si no aparece, recarga.';
+        arButton.textContent = stream ? 'Detener cámara' : 'Recargar y reintentar';
+        arButton.disabled = false;
+    }, 30000);
 }
 
 arButton.addEventListener('click', async () => {
-    arButton.disabled = true;
-    if (currentSession) {
-        try {
-            await currentSession.end();
-        } catch (error) {
-            showARError(error);
-        } finally {
-            arButton.disabled = false;
-        }
+    if (started) {
+        stopCamera();
+        // Libera también el detector y vuelve a la pantalla inicial.
+        window.location.reload();
         return;
     }
-
-    let session;
+    started = true;
+    arButton.disabled = true;
+    arStatus.textContent = 'Cargando el detector de marcadores…';
     try {
-        // Solicitar la sesión directamente desde el gesto del usuario.
-        session = await navigator.xr.requestSession('immersive-ar', {
-            optionalFeatures: ['dom-overlay'],
-            domOverlay: { root: document.getElementById('ar-controls') }
-        });
-        currentSession = session;
-        session.addEventListener('end', onSessionEnded, { once: true });
-        await renderer.xr.setSession(session);
-        if (currentSession !== session) return;
-        document.body.classList.add('ar-active');
-        arButton.textContent = 'Salir de AR';
-        arStatus.textContent = 'AR activa. El cubo aparece a un metro del punto de inicio.';
-    } catch (error) {
-        if (session) {
-            session.removeEventListener('end', onSessionEnded);
-            try { await session.end(); } catch (endError) { console.warn(endError); }
+        await loadScript('https://aframe.io/releases/1.6.0/aframe.min.js');
+        await loadScript(assetBase + 'aframe/build/aframe-ar.js');
+        if (!window.AFRAME?.systems.arjs) {
+            throw new Error('El detector AR no se cargó correctamente. Recarga la página.');
         }
-        onSessionEnded();
-        showARError(error);
-    } finally {
-        arButton.disabled = false;
+        arStatus.textContent = 'Permite el acceso a la cámara cuando el navegador lo solicite.';
+        createScene();
+    } catch (error) {
+        showError(error);
     }
 });
 
-async function checkARSupport() {
-    if (!window.isSecureContext) {
-        arButton.textContent = 'Se requiere HTTPS';
-        arStatus.textContent = 'Abre esta página con HTTPS. Una dirección HTTP de la red local no permite iniciar AR en el teléfono.';
-        return;
-    }
-    if (!navigator.xr) {
-        arButton.textContent = 'WebXR no disponible';
-        arStatus.textContent = 'Este navegador no ofrece WebXR. Usa un navegador y dispositivo compatibles con WebXR AR; Chrome en iPhone no garantiza esta compatibilidad.';
-        return;
-    }
-    try {
-        const supported = await navigator.xr.isSessionSupported('immersive-ar');
-        arButton.disabled = !supported;
-        arButton.textContent = supported ? 'Iniciar AR' : 'AR no compatible';
-        arStatus.textContent = supported
-            ? 'Pulsa Iniciar AR y acepta los permisos que solicite el navegador.'
-            : 'El navegador no admite AR en este dispositivo. En Android, comprueba que el teléfono sea compatible con ARCore y tenga actualizados Chrome y los Servicios de Google Play para RA.';
-    } catch (error) {
-        arButton.textContent = 'AR no disponible';
-        showARError(error);
-    }
-}
+window.addEventListener('pagehide', stopCamera);
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted && started) window.location.reload();
+});
 
-checkARSupport();
-
-// ==============================
-// CUBO
-// ==============================
-const geometry = new THREE.BoxGeometry(
-    0.2,
-    0.2,
-    0.2
-);
-
-const material = new THREE.MeshNormalMaterial();
-
-const cube = new THREE.Mesh(
-    geometry,
-    material
-);
-
-cube.position.set(0, 0, -1);
-
-scene.add(cube);
-
-// ==============================
-// ANIMACIÓN
-// ==============================
-function animate() {
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.01;
-
-    renderer.render(scene, camera);
-}
-
-renderer.setAnimationLoop(animate);
-
-// ==============================
-// CAMBIO DE TAMAÑO
-// ==============================
-window.addEventListener('resize', onWindowResize);
-
-function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-
-    renderer.setSize(
-        window.innerWidth,
-        window.innerHeight
-    );
+if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+    arButton.disabled = true;
+    arStatus.textContent = !window.isSecureContext
+        ? 'La cámara requiere HTTPS. Abre el enlace de GitHub Pages o usa localhost para desarrollar.'
+        : 'Este navegador no ofrece acceso a la cámara. Abre la página en un navegador compatible.';
 }
